@@ -1,6 +1,6 @@
 /**
  * Menu Page
- * Product listing with category filters
+ * Product listing with modern category filters
  */
 
 import { Suspense } from 'react';
@@ -56,7 +56,7 @@ function CategoryFilter({
     activeCategory: ProductCategory | 'all'
 }) {
     return (
-        <div className="flex flex-wrap justify-center gap-2 mb-8">
+        <div className="flex flex-wrap justify-center gap-2 mb-10">
             {categories.map((cat) => {
                 const isActive = cat.id === activeCategory;
                 const href = cat.id === 'all' ? '/menu' : `/menu?category=${cat.id}`;
@@ -65,12 +65,12 @@ function CategoryFilter({
                     <a
                         key={cat.id}
                         href={href}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${isActive
-                            ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/30'
-                            : 'bg-dark-800 text-dark-300 hover:bg-dark-700 hover:text-white'
+                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${isActive
+                            ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/25'
+                            : 'bg-white text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 border border-neutral-200'
                             }`}
                     >
-                        <span>{cat.emoji}</span>
+                        <span className="text-base">{cat.emoji}</span>
                         {cat.label}
                     </a>
                 );
@@ -84,15 +84,15 @@ function ProductsSkeleton() {
     return (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
-                <div key={i} className="card">
-                    <div className="aspect-square skeleton" />
+                <div key={i} className="card bg-white rounded-xl overflow-hidden">
+                    <div className="aspect-[4/3] skeleton" />
                     <div className="p-4 space-y-3">
-                        <div className="h-6 w-3/4 skeleton" />
-                        <div className="h-4 w-full skeleton" />
-                        <div className="h-4 w-1/2 skeleton" />
+                        <div className="h-5 w-3/4 skeleton rounded" />
+                        <div className="h-4 w-full skeleton rounded" />
+                        <div className="h-4 w-1/2 skeleton rounded" />
                         <div className="flex justify-between items-center pt-2">
-                            <div className="h-6 w-20 skeleton" />
-                            <div className="h-10 w-24 skeleton rounded-lg" />
+                            <div className="h-6 w-20 skeleton rounded" />
+                            <div className="h-9 w-24 skeleton rounded-lg" />
                         </div>
                     </div>
                 </div>
@@ -113,8 +113,10 @@ async function ProductsList({
         return (
             <div className="text-center py-16">
                 <p className="text-6xl mb-4">😕</p>
-                <h3 className="text-xl font-semibold mb-2">Aucun produit trouvé</h3>
-                <p className="text-dark-400">
+                <h3 className="text-xl font-semibold text-neutral-900 mb-2" style={{ fontFamily: 'Poppins, sans-serif', textTransform: 'none' }}>
+                    Aucun produit trouvé
+                </h3>
+                <p className="text-neutral-500">
                     Essayez une autre catégorie ou revenez plus tard.
                 </p>
             </div>
@@ -144,15 +146,16 @@ export default async function MenuPage({
     const activeCategory = category || 'all';
 
     return (
-        <div className="min-h-screen">
+        <div className="min-h-screen bg-neutral-50">
             {/* Hero */}
-            <section className="relative py-16 md:py-24 bg-gradient-to-b from-dark-900 to-dark-950">
+            <section className="relative py-16 md:py-20 bg-white border-b border-neutral-100">
                 <div className="container-custom text-center">
-                    <span className="badge-accent mb-4">Notre carte</span>
-                    <h1 className="text-4xl md:text-5xl font-display font-bold mb-4">
-                        Découvrez notre menu
+                    <span className="badge-primary mb-4">🍽️ Notre carte</span>
+                    <h1 className="text-neutral-900 mb-4">
+                        DÉCOUVREZ NOTRE MENU
                     </h1>
-                    <p className="text-dark-400 max-w-2xl mx-auto">
+                    <div className="divider-accent mx-auto" />
+                    <p className="text-neutral-500 max-w-2xl mx-auto mt-4">
                         Des burgers juteux, des pizzas croustillantes et des accompagnements gourmands.
                         Tous nos produits sont préparés sur place avec des ingrédients frais.
                     </p>

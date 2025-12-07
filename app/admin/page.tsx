@@ -1,6 +1,6 @@
 /**
  * Admin Dashboard Page
- * Real-time orders view with status management
+ * Modern admin panel with professional light theme
  */
 
 'use client';
@@ -12,14 +12,16 @@ import {
     Package,
     Clock,
     TrendingUp,
-    Users,
     ChefHat,
     AlertCircle,
     Check,
     X,
     Download,
     RefreshCw,
-    Loader2
+    Loader2,
+    QrCode,
+    Megaphone,
+    ShoppingBag
 } from 'lucide-react';
 import { useAuth, useRequireAdmin } from '@/contexts/auth-context';
 import { createBrowserSupabaseClient } from '@/lib/supabase';
@@ -127,53 +129,60 @@ export default function AdminDashboardPage() {
 
     if (authLoading || loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-accent-400" />
+            <div className="min-h-screen flex items-center justify-center bg-neutral-50">
+                <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
             </div>
         );
     }
 
-    const statusConfig: Record<OrderStatus, { label: string; color: string; next?: OrderStatus }> = {
-        pending: { label: 'En attente', color: 'bg-amber-500', next: 'paid' },
-        paid: { label: 'Payée', color: 'bg-blue-500', next: 'preparing' },
-        preparing: { label: 'En préparation', color: 'bg-purple-500', next: 'ready' },
-        ready: { label: 'Prête', color: 'bg-green-500', next: 'completed' },
-        completed: { label: 'Récupérée', color: 'bg-gray-500' },
-        cancelled: { label: 'Annulée', color: 'bg-red-500' },
+    const statusConfig: Record<OrderStatus, { label: string; color: string; bg: string; next?: OrderStatus }> = {
+        pending: { label: 'En attente', color: 'text-amber-700', bg: 'bg-amber-100', next: 'paid' },
+        paid: { label: 'Payée', color: 'text-blue-700', bg: 'bg-blue-100', next: 'preparing' },
+        preparing: { label: 'En préparation', color: 'text-purple-700', bg: 'bg-purple-100', next: 'ready' },
+        ready: { label: 'Prête', color: 'text-green-700', bg: 'bg-green-100', next: 'completed' },
+        completed: { label: 'Récupérée', color: 'text-neutral-600', bg: 'bg-neutral-100' },
+        cancelled: { label: 'Annulée', color: 'text-red-700', bg: 'bg-red-100' },
     };
 
     return (
-        <div className="min-h-screen bg-dark-950">
+        <div className="min-h-screen bg-neutral-50">
             {/* Header */}
-            <div className="bg-dark-900 border-b border-white/5">
+            <div className="bg-white border-b border-neutral-200">
                 <div className="container-custom py-6">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
-                            <h1 className="text-2xl font-bold flex items-center gap-3">
-                                <ChefHat className="w-8 h-8 text-primary-400" />
-                                Dashboard Admin
+                            <h1 className="text-2xl text-neutral-900 flex items-center gap-3">
+                                <div className="w-10 h-10 bg-primary-600 rounded-xl flex items-center justify-center">
+                                    <ChefHat className="w-5 h-5 text-white" />
+                                </div>
+                                DASHBOARD ADMIN
                             </h1>
-                            <p className="text-dark-400 text-sm mt-1">
+                            <p className="text-neutral-500 text-sm mt-1" style={{ fontFamily: 'Poppins, sans-serif' }}>
                                 Bienvenue, {profile?.full_name}
                             </p>
                         </div>
-                        <div className="flex gap-3">
+                        <div className="flex flex-wrap gap-2">
                             <button
                                 onClick={fetchOrders}
-                                className="btn-outline btn-sm"
+                                className="btn-secondary btn-sm"
                             >
                                 <RefreshCw className="w-4 h-4" />
                                 Rafraîchir
                             </button>
                             <button
                                 onClick={exportToCSV}
-                                className="btn-outline btn-sm"
+                                className="btn-secondary btn-sm"
                             >
                                 <Download className="w-4 h-4" />
-                                Exporter CSV
+                                Exporter
                             </button>
+                            <Link href="/admin/scan" className="btn-secondary btn-sm">
+                                <QrCode className="w-4 h-4" />
+                                Scanner
+                            </Link>
                             <Link href="/admin/products" className="btn-primary btn-sm">
-                                Gérer les produits
+                                <ShoppingBag className="w-4 h-4" />
+                                Produits
                             </Link>
                         </div>
                     </div>
@@ -183,25 +192,41 @@ export default function AdminDashboardPage() {
             <div className="container-custom py-8">
                 {/* Stats */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                    <div className="card p-4">
-                        <Package className="w-8 h-8 text-accent-400 mb-2" />
-                        <p className="text-3xl font-bold">{stats.total}</p>
-                        <p className="text-sm text-dark-400">Commandes</p>
+                    <div className="card bg-white p-5">
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="w-10 h-10 bg-accent-100 rounded-lg flex items-center justify-center">
+                                <Package className="w-5 h-5 text-accent-600" />
+                            </div>
+                        </div>
+                        <p className="text-3xl font-display text-neutral-900">{stats.total}</p>
+                        <p className="text-sm text-neutral-500">Commandes</p>
                     </div>
-                    <div className="card p-4">
-                        <Clock className="w-8 h-8 text-amber-400 mb-2" />
-                        <p className="text-3xl font-bold">{stats.pending}</p>
-                        <p className="text-sm text-dark-400">En cours</p>
+                    <div className="card bg-white p-5">
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+                                <Clock className="w-5 h-5 text-amber-600" />
+                            </div>
+                        </div>
+                        <p className="text-3xl font-display text-neutral-900">{stats.pending}</p>
+                        <p className="text-sm text-neutral-500">En cours</p>
                     </div>
-                    <div className="card p-4">
-                        <AlertCircle className="w-8 h-8 text-green-400 mb-2" />
-                        <p className="text-3xl font-bold">{stats.ready}</p>
-                        <p className="text-sm text-dark-400">Prêtes</p>
+                    <div className="card bg-white p-5">
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                                <AlertCircle className="w-5 h-5 text-green-600" />
+                            </div>
+                        </div>
+                        <p className="text-3xl font-display text-neutral-900">{stats.ready}</p>
+                        <p className="text-sm text-neutral-500">Prêtes</p>
                     </div>
-                    <div className="card p-4">
-                        <TrendingUp className="w-8 h-8 text-primary-400 mb-2" />
-                        <p className="text-3xl font-bold">{formatPrice(stats.revenue)}</p>
-                        <p className="text-sm text-dark-400">Revenus</p>
+                    <div className="card bg-white p-5">
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
+                                <TrendingUp className="w-5 h-5 text-primary-600" />
+                            </div>
+                        </div>
+                        <p className="text-3xl font-display text-primary-600">{formatPrice(stats.revenue)}</p>
+                        <p className="text-sm text-neutral-500">Revenus</p>
                     </div>
                 </div>
 
@@ -211,13 +236,13 @@ export default function AdminDashboardPage() {
                         <button
                             key={status}
                             onClick={() => setFilter(status)}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${filter === status
-                                ? 'bg-primary-600 text-white'
-                                : 'bg-dark-800 text-dark-300 hover:bg-dark-700'
+                            className={`px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${filter === status
+                                ? 'bg-primary-600 text-white shadow-red'
+                                : 'bg-white text-neutral-600 hover:bg-neutral-100 border border-neutral-200'
                                 }`}
                         >
                             {status === 'all' ? 'Toutes' : statusConfig[status]?.label}
-                            <span className="ml-2 opacity-60">
+                            <span className="ml-2 opacity-70">
                                 {status === 'all'
                                     ? orders.length
                                     : orders.filter(o => o.status === status).length}
@@ -226,35 +251,35 @@ export default function AdminDashboardPage() {
                     ))}
                 </div>
 
-                {/* Orders List */}
-                <div className="card">
+                {/* Orders Table */}
+                <div className="card bg-white overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full">
-                            <thead className="bg-dark-800/50">
-                                <tr>
-                                    <th className="text-left p-4 text-sm font-medium text-dark-400">Commande</th>
-                                    <th className="text-left p-4 text-sm font-medium text-dark-400">Client</th>
-                                    <th className="text-left p-4 text-sm font-medium text-dark-400">Articles</th>
-                                    <th className="text-left p-4 text-sm font-medium text-dark-400">Total</th>
-                                    <th className="text-left p-4 text-sm font-medium text-dark-400">Statut</th>
-                                    <th className="text-left p-4 text-sm font-medium text-dark-400">Actions</th>
+                            <thead>
+                                <tr className="bg-neutral-50 border-b border-neutral-100">
+                                    <th className="text-left p-4 text-sm font-semibold text-neutral-600">Commande</th>
+                                    <th className="text-left p-4 text-sm font-semibold text-neutral-600">Client</th>
+                                    <th className="text-left p-4 text-sm font-semibold text-neutral-600">Articles</th>
+                                    <th className="text-left p-4 text-sm font-semibold text-neutral-600">Total</th>
+                                    <th className="text-left p-4 text-sm font-semibold text-neutral-600">Statut</th>
+                                    <th className="text-left p-4 text-sm font-semibold text-neutral-600">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-white/5">
+                            <tbody className="divide-y divide-neutral-100">
                                 <AnimatePresence>
                                     {filteredOrders.map((order) => {
                                         const config = statusConfig[order.status];
                                         return (
                                             <motion.tr
                                                 key={order.id}
-                                                initial={{ opacity: 0, backgroundColor: 'rgba(234, 179, 8, 0.2)' }}
+                                                initial={{ opacity: 0, backgroundColor: 'rgba(255, 215, 0, 0.1)' }}
                                                 animate={{ opacity: 1, backgroundColor: 'transparent' }}
                                                 exit={{ opacity: 0 }}
-                                                className="hover:bg-dark-800/30"
+                                                className="hover:bg-neutral-50"
                                             >
                                                 <td className="p-4">
-                                                    <p className="font-bold">#{order.order_number?.toString().padStart(4, '0')}</p>
-                                                    <p className="text-xs text-dark-500">
+                                                    <p className="font-bold text-neutral-900">#{order.order_number?.toString().padStart(4, '0')}</p>
+                                                    <p className="text-xs text-neutral-400">
                                                         {new Date(order.created_at).toLocaleTimeString('fr-BE', {
                                                             hour: '2-digit',
                                                             minute: '2-digit',
@@ -262,19 +287,19 @@ export default function AdminDashboardPage() {
                                                     </p>
                                                 </td>
                                                 <td className="p-4">
-                                                    <p className="font-medium">{order.customer_name}</p>
-                                                    <p className="text-sm text-dark-400">{order.customer_phone}</p>
+                                                    <p className="font-medium text-neutral-900">{order.customer_name}</p>
+                                                    <p className="text-sm text-neutral-500">{order.customer_phone}</p>
                                                 </td>
                                                 <td className="p-4">
-                                                    <p className="text-sm text-dark-300">
+                                                    <p className="text-sm text-neutral-600">
                                                         {order.items?.length || 0} article(s)
                                                     </p>
                                                 </td>
                                                 <td className="p-4">
-                                                    <p className="font-bold text-accent-400">{formatPrice(order.total)}</p>
+                                                    <p className="font-bold text-primary-600">{formatPrice(order.total)}</p>
                                                 </td>
                                                 <td className="p-4">
-                                                    <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold text-white ${config.color}`}>
+                                                    <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${config.bg} ${config.color}`}>
                                                         {config.label}
                                                     </span>
                                                 </td>
@@ -283,7 +308,7 @@ export default function AdminDashboardPage() {
                                                         {config.next && (
                                                             <button
                                                                 onClick={() => updateOrderStatus(order.id, config.next!)}
-                                                                className="p-2 bg-success-500/20 text-success-500 rounded-lg hover:bg-success-500/30 transition-colors"
+                                                                className="p-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
                                                                 title={`Passer à "${statusConfig[config.next].label}"`}
                                                             >
                                                                 <Check className="w-4 h-4" />
@@ -292,7 +317,7 @@ export default function AdminDashboardPage() {
                                                         {order.status !== 'cancelled' && order.status !== 'completed' && (
                                                             <button
                                                                 onClick={() => updateOrderStatus(order.id, 'cancelled')}
-                                                                className="p-2 bg-red-500/20 text-red-500 rounded-lg hover:bg-red-500/30 transition-colors"
+                                                                className="p-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
                                                                 title="Annuler"
                                                             >
                                                                 <X className="w-4 h-4" />
@@ -300,7 +325,7 @@ export default function AdminDashboardPage() {
                                                         )}
                                                         <Link
                                                             href={`/admin/orders/${order.id}`}
-                                                            className="p-2 bg-dark-700 text-dark-300 rounded-lg hover:bg-dark-600 transition-colors"
+                                                            className="p-2 bg-neutral-100 text-neutral-600 rounded-lg hover:bg-neutral-200 transition-colors text-sm font-medium"
                                                         >
                                                             Détails
                                                         </Link>
@@ -316,8 +341,8 @@ export default function AdminDashboardPage() {
 
                     {filteredOrders.length === 0 && (
                         <div className="p-12 text-center">
-                            <Package className="w-12 h-12 text-dark-600 mx-auto mb-4" />
-                            <p className="text-dark-400">Aucune commande trouvée</p>
+                            <Package className="w-12 h-12 text-neutral-300 mx-auto mb-4" />
+                            <p className="text-neutral-500">Aucune commande trouvée</p>
                         </div>
                     )}
                 </div>

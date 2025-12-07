@@ -1,6 +1,6 @@
 /**
  * Checkout Page
- * Customer info form and payment initiation
+ * Modern customer info form with light theme
  */
 
 'use client';
@@ -9,11 +9,20 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, CreditCard, Loader2, Lock, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, CreditCard, Loader2, Lock, ShoppingBag, User, Mail, Phone, FileText } from 'lucide-react';
 import { useCart } from '@/contexts/cart-context';
 import { useAuth } from '@/contexts/auth-context';
 import { formatPrice } from '@/lib/stripe';
 import { createOrderSchema, type CreateOrderInput } from '@/lib/validations';
+
+// Category emojis
+const categoryEmojis: Record<string, string> = {
+    burger: '🍔',
+    pizza: '🍕',
+    side: '🍟',
+    drink: '🥤',
+    dessert: '🍰',
+};
 
 export default function CheckoutPage() {
     const router = useRouter();
@@ -33,7 +42,6 @@ export default function CheckoutPage() {
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-        // Clear error when user starts typing
         if (errors[name]) {
             setErrors(prev => ({ ...prev, [name]: '' }));
         }
@@ -45,7 +53,6 @@ export default function CheckoutPage() {
         setErrors({});
 
         try {
-            // Prepare order data
             const orderData: CreateOrderInput = {
                 items: items.map(item => ({
                     product_id: item.product.id,
@@ -58,7 +65,6 @@ export default function CheckoutPage() {
                 notes: formData.notes || undefined,
             };
 
-            // Validate with Zod
             const validation = createOrderSchema.safeParse(orderData);
 
             if (!validation.success) {
@@ -72,7 +78,6 @@ export default function CheckoutPage() {
                 return;
             }
 
-            // Create order and get Stripe checkout URL
             const response = await fetch('/api/orders/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -85,7 +90,6 @@ export default function CheckoutPage() {
                 throw new Error(data.error || 'Erreur lors de la création de la commande');
             }
 
-            // Redirect to Stripe Checkout
             if (data.url) {
                 window.location.href = data.url;
             } else {
@@ -100,31 +104,30 @@ export default function CheckoutPage() {
         }
     };
 
-    // Redirect if cart is empty
     if (items.length === 0) {
         return (
-            <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4">
-                <ShoppingBag className="w-16 h-16 text-dark-600 mb-4" />
-                <h1 className="text-2xl font-bold mb-2">Votre panier est vide</h1>
-                <p className="text-dark-400 mb-6">Ajoutez des articles pour passer commande.</p>
+            <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4 bg-neutral-50">
+                <ShoppingBag className="w-16 h-16 text-neutral-300 mb-4" />
+                <h1 className="text-2xl text-neutral-900 mb-2">VOTRE PANIER EST VIDE</h1>
+                <p className="text-neutral-500 mb-6">Ajoutez des articles pour passer commande.</p>
                 <Link href="/menu" className="btn-primary">Voir le menu</Link>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen">
+        <div className="min-h-screen bg-neutral-50">
             {/* Header */}
-            <section className="bg-dark-900/50 border-b border-white/5">
+            <section className="bg-white border-b border-neutral-100">
                 <div className="container-custom py-8">
                     <Link
                         href="/cart"
-                        className="inline-flex items-center gap-2 text-dark-400 hover:text-white transition-colors mb-4"
+                        className="inline-flex items-center gap-2 text-neutral-500 hover:text-neutral-900 transition-colors mb-4"
                     >
                         <ArrowLeft className="w-4 h-4" />
                         Retour au panier
                     </Link>
-                    <h1 className="text-3xl font-bold">Finaliser la commande</h1>
+                    <h1 className="text-neutral-900">FINALISER LA COMMANDE</h1>
                 </div>
             </section>
 
@@ -137,18 +140,21 @@ export default function CheckoutPage() {
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 {/* General Error */}
                                 {errors.general && (
-                                    <div className="p-4 bg-primary-600/20 border border-primary-600/50 rounded-xl text-primary-400">
+                                    <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-600">
                                         {errors.general}
                                     </div>
                                 )}
 
                                 {/* Contact Info */}
-                                <div className="card p-6">
-                                    <h2 className="font-bold text-xl mb-6">Vos coordonnées</h2>
+                                <div className="card bg-white p-6">
+                                    <h2 className="font-semibold text-xl text-neutral-900 mb-6 flex items-center gap-2" style={{ fontFamily: 'Poppins, sans-serif', textTransform: 'none' }}>
+                                        <User className="w-5 h-5 text-primary-600" />
+                                        Vos coordonnées
+                                    </h2>
 
                                     <div className="space-y-4">
                                         <div>
-                                            <label htmlFor="customer_name" className="block text-sm font-medium text-dark-300 mb-2">
+                                            <label htmlFor="customer_name" className="block text-sm font-medium text-neutral-700 mb-2">
                                                 Nom complet *
                                             </label>
                                             <input
@@ -157,17 +163,18 @@ export default function CheckoutPage() {
                                                 name="customer_name"
                                                 value={formData.customer_name}
                                                 onChange={handleInputChange}
-                                                className={`input ${errors.customer_name ? 'border-primary-500' : ''}`}
+                                                className={`input ${errors.customer_name ? 'input-error' : ''}`}
                                                 placeholder="Jean Dupont"
                                                 required
                                             />
                                             {errors.customer_name && (
-                                                <p className="text-primary-400 text-sm mt-1">{errors.customer_name}</p>
+                                                <p className="text-red-500 text-sm mt-1">{errors.customer_name}</p>
                                             )}
                                         </div>
 
                                         <div>
-                                            <label htmlFor="customer_email" className="block text-sm font-medium text-dark-300 mb-2">
+                                            <label htmlFor="customer_email" className="block text-sm font-medium text-neutral-700 mb-2">
+                                                <Mail className="w-4 h-4 inline mr-1" />
                                                 Email *
                                             </label>
                                             <input
@@ -176,17 +183,18 @@ export default function CheckoutPage() {
                                                 name="customer_email"
                                                 value={formData.customer_email}
                                                 onChange={handleInputChange}
-                                                className={`input ${errors.customer_email ? 'border-primary-500' : ''}`}
+                                                className={`input ${errors.customer_email ? 'input-error' : ''}`}
                                                 placeholder="jean@exemple.be"
                                                 required
                                             />
                                             {errors.customer_email && (
-                                                <p className="text-primary-400 text-sm mt-1">{errors.customer_email}</p>
+                                                <p className="text-red-500 text-sm mt-1">{errors.customer_email}</p>
                                             )}
                                         </div>
 
                                         <div>
-                                            <label htmlFor="customer_phone" className="block text-sm font-medium text-dark-300 mb-2">
+                                            <label htmlFor="customer_phone" className="block text-sm font-medium text-neutral-700 mb-2">
+                                                <Phone className="w-4 h-4 inline mr-1" />
                                                 Téléphone *
                                             </label>
                                             <input
@@ -195,20 +203,23 @@ export default function CheckoutPage() {
                                                 name="customer_phone"
                                                 value={formData.customer_phone}
                                                 onChange={handleInputChange}
-                                                className={`input ${errors.customer_phone ? 'border-primary-500' : ''}`}
+                                                className={`input ${errors.customer_phone ? 'input-error' : ''}`}
                                                 placeholder="+32 470 12 34 56"
                                                 required
                                             />
                                             {errors.customer_phone && (
-                                                <p className="text-primary-400 text-sm mt-1">{errors.customer_phone}</p>
+                                                <p className="text-red-500 text-sm mt-1">{errors.customer_phone}</p>
                                             )}
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Notes */}
-                                <div className="card p-6">
-                                    <h2 className="font-bold text-xl mb-6">Instructions spéciales</h2>
+                                <div className="card bg-white p-6">
+                                    <h2 className="font-semibold text-xl text-neutral-900 mb-6 flex items-center gap-2" style={{ fontFamily: 'Poppins, sans-serif', textTransform: 'none' }}>
+                                        <FileText className="w-5 h-5 text-primary-600" />
+                                        Instructions spéciales
+                                    </h2>
                                     <textarea
                                         id="notes"
                                         name="notes"
@@ -238,7 +249,7 @@ export default function CheckoutPage() {
                                     )}
                                 </button>
 
-                                <p className="flex items-center justify-center gap-2 text-xs text-dark-500">
+                                <p className="flex items-center justify-center gap-2 text-xs text-neutral-400">
                                     <Lock className="w-3 h-3" />
                                     Paiement sécurisé par Stripe
                                 </p>
@@ -247,13 +258,15 @@ export default function CheckoutPage() {
 
                         {/* Order Summary */}
                         <div>
-                            <div className="card p-6 sticky top-24">
-                                <h2 className="font-bold text-xl mb-6">Votre commande</h2>
+                            <div className="card bg-white p-6 sticky top-24">
+                                <h2 className="font-semibold text-xl text-neutral-900 mb-6" style={{ fontFamily: 'Poppins, sans-serif', textTransform: 'none' }}>
+                                    Votre commande
+                                </h2>
 
                                 <ul className="space-y-4 mb-6">
                                     {items.map((item) => (
                                         <li key={item.product.id} className="flex gap-4">
-                                            <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-dark-800 flex-shrink-0">
+                                            <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-neutral-100 flex-shrink-0">
                                                 {item.product.image_url ? (
                                                     <Image
                                                         src={item.product.image_url}
@@ -264,33 +277,29 @@ export default function CheckoutPage() {
                                                     />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center text-2xl">
-                                                        {item.product.category === 'burger' && '🍔'}
-                                                        {item.product.category === 'pizza' && '🍕'}
-                                                        {item.product.category === 'side' && '🍟'}
-                                                        {item.product.category === 'drink' && '🥤'}
-                                                        {item.product.category === 'dessert' && '🍰'}
+                                                        {categoryEmojis[item.product.category] || '🍽️'}
                                                     </div>
                                                 )}
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="font-medium truncate">{item.product.name}</p>
-                                                <p className="text-sm text-dark-400">Qté: {item.quantity}</p>
+                                                <p className="font-medium text-neutral-900 truncate">{item.product.name}</p>
+                                                <p className="text-sm text-neutral-500">Qté: {item.quantity}</p>
                                             </div>
-                                            <span className="font-semibold">
+                                            <span className="font-semibold text-neutral-900">
                                                 {formatPrice(item.product.price * item.quantity)}
                                             </span>
                                         </li>
                                     ))}
                                 </ul>
 
-                                <div className="border-t border-white/10 pt-4 space-y-2">
-                                    <div className="flex justify-between text-dark-300">
+                                <div className="border-t border-neutral-100 pt-4 space-y-2">
+                                    <div className="flex justify-between text-neutral-500">
                                         <span>Sous-total</span>
-                                        <span>{formatPrice(subtotal)}</span>
+                                        <span className="text-neutral-900">{formatPrice(subtotal)}</span>
                                     </div>
                                     <div className="flex justify-between text-xl font-bold">
-                                        <span>Total</span>
-                                        <span className="text-accent-400">{formatPrice(subtotal)}</span>
+                                        <span className="text-neutral-900">Total</span>
+                                        <span className="text-primary-600">{formatPrice(subtotal)}</span>
                                     </div>
                                 </div>
                             </div>

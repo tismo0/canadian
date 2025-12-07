@@ -1,6 +1,6 @@
 /**
  * Announcement Banner
- * Scrolling announcements bar at the top of the page
+ * Modern scrolling announcements with light theme
  */
 
 'use client';
@@ -19,7 +19,6 @@ export default function AnnouncementBanner() {
     const [isVisible, setIsVisible] = useState(true);
 
     useEffect(() => {
-        // Load announcements from localStorage
         const loadAnnouncements = () => {
             const saved = localStorage.getItem('admin_announcements');
             if (saved) {
@@ -29,11 +28,7 @@ export default function AnnouncementBanner() {
         };
 
         loadAnnouncements();
-
-        // Listen for storage changes (when admin updates)
         window.addEventListener('storage', loadAnnouncements);
-
-        // Poll every 30 seconds
         const interval = setInterval(loadAnnouncements, 30000);
 
         return () => {
@@ -48,7 +43,6 @@ export default function AnnouncementBanner() {
         <div className="announcement-bar relative overflow-hidden">
             <div className="py-2 px-4">
                 <div className="announcement-scroll whitespace-nowrap">
-                    {/* Duplicate for seamless loop */}
                     {[...announcements, ...announcements].map((announcement, index) => (
                         <span key={`${announcement.id}-${index}`} className="inline-flex items-center mx-8">
                             <span className="text-accent-400 mr-2">★</span>
@@ -59,7 +53,7 @@ export default function AnnouncementBanner() {
             </div>
             <button
                 onClick={() => setIsVisible(false)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-white/10 rounded transition-colors"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 hover:bg-white/20 rounded-lg transition-colors"
                 aria-label="Fermer les annonces"
             >
                 <X className="w-4 h-4" />

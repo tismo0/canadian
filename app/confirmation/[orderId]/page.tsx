@@ -1,11 +1,11 @@
 /**
  * Order Confirmation Page
- * Displays order confirmation and QR code for pickup
+ * Modern confirmation with QR code display
  */
 
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { CheckCircle, ArrowRight, Clock, MapPin } from 'lucide-react';
+import { CheckCircle, ArrowRight, Clock, MapPin, Phone } from 'lucide-react';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { generateQRCodeDataURI } from '@/lib/qr';
 import { formatPrice } from '@/lib/stripe';
@@ -62,47 +62,53 @@ export default async function ConfirmationPage({
         }
     }
 
-    const statusMessages: Record<string, { title: string; description: string }> = {
+    const statusMessages: Record<string, { title: string; description: string; color: string }> = {
         pending: {
             title: 'En attente de paiement',
             description: 'Votre commande sera traitée dès réception du paiement.',
+            color: 'text-amber-600',
         },
         paid: {
-            title: 'Paiement reçu!',
+            title: 'Paiement confirmé !',
             description: 'Votre commande est en cours de préparation.',
+            color: 'text-blue-600',
         },
         preparing: {
             title: 'En préparation',
             description: 'Nos chefs préparent votre commande avec soin.',
+            color: 'text-purple-600',
         },
         ready: {
-            title: 'Prête à retirer!',
+            title: 'Prête à retirer !',
             description: 'Votre commande vous attend au comptoir.',
+            color: 'text-green-600',
         },
         completed: {
             title: 'Commande récupérée',
-            description: 'Merci et bon appétit!',
+            description: 'Merci et bon appétit !',
+            color: 'text-neutral-600',
         },
         cancelled: {
             title: 'Commande annulée',
             description: 'Cette commande a été annulée.',
+            color: 'text-red-600',
         },
     };
 
     const status = statusMessages[order.status] || statusMessages.pending;
 
     return (
-        <div className="min-h-screen">
+        <div className="min-h-screen bg-neutral-50">
             {/* Success Header */}
-            <section className="py-16 bg-gradient-to-b from-success-500/10 to-transparent">
+            <section className="py-16 bg-gradient-to-b from-green-50 to-neutral-50">
                 <div className="container-custom text-center">
-                    <div className="inline-flex p-4 bg-success-500/20 rounded-full mb-6">
-                        <CheckCircle className="w-12 h-12 text-success-500" />
+                    <div className="inline-flex p-4 bg-green-100 rounded-full mb-6">
+                        <CheckCircle className="w-12 h-12 text-green-600" />
                     </div>
-                    <h1 className="text-3xl md:text-4xl font-bold mb-4">
-                        {status.title}
+                    <h1 className={`text-neutral-900 mb-4`}>
+                        {status.title.toUpperCase()}
                     </h1>
-                    <p className="text-dark-400 text-lg">
+                    <p className="text-neutral-600 text-lg">
                         {status.description}
                     </p>
                 </div>
@@ -121,8 +127,8 @@ export default async function ConfirmationPage({
                                     orderNumber={order.order_number}
                                 />
                             ) : (
-                                <div className="card p-8 text-center">
-                                    <p className="text-dark-400">QR code non disponible</p>
+                                <div className="card bg-white p-8 text-center">
+                                    <p className="text-neutral-500">QR code non disponible</p>
                                 </div>
                             )}
                         </div>
@@ -130,20 +136,23 @@ export default async function ConfirmationPage({
                         {/* Order Details */}
                         <div className="space-y-6">
                             {/* Status Card */}
-                            <div className="card p-6">
-                                <h2 className="font-bold text-xl mb-4">Détails de la commande</h2>
+                            <div className="card bg-white p-6">
+                                <h2 className="font-semibold text-xl text-neutral-900 mb-4" style={{ fontFamily: 'Poppins, sans-serif', textTransform: 'none' }}>
+                                    Détails de la commande
+                                </h2>
 
                                 <dl className="space-y-3">
-                                    <div className="flex justify-between">
-                                        <dt className="text-dark-400">Commande n°</dt>
-                                        <dd className="font-semibold">#{order.order_number?.toString().padStart(4, '0')}</dd>
+                                    <div className="flex justify-between py-2 border-b border-neutral-100">
+                                        <dt className="text-neutral-500">Commande n°</dt>
+                                        <dd className="font-bold text-primary-600">#{order.order_number?.toString().padStart(4, '0')}</dd>
                                     </div>
-                                    <div className="flex justify-between">
-                                        <dt className="text-dark-400">Statut</dt>
+                                    <div className="flex justify-between py-2 border-b border-neutral-100">
+                                        <dt className="text-neutral-500">Statut</dt>
                                         <dd>
                                             <span className={`badge ${order.status === 'ready' ? 'badge-success' :
                                                     order.status === 'paid' || order.status === 'preparing' ? 'badge-primary' :
-                                                        'badge-accent'
+                                                        order.status === 'cancelled' ? 'badge-error' :
+                                                            'badge-warning'
                                                 }`}>
                                                 {order.status === 'pending' && 'En attente'}
                                                 {order.status === 'paid' && 'Payée'}
@@ -154,23 +163,25 @@ export default async function ConfirmationPage({
                                             </span>
                                         </dd>
                                     </div>
-                                    <div className="flex justify-between">
-                                        <dt className="text-dark-400">Total</dt>
-                                        <dd className="font-bold text-accent-400">{formatPrice(order.total)}</dd>
+                                    <div className="flex justify-between py-2">
+                                        <dt className="text-neutral-500">Total</dt>
+                                        <dd className="font-bold text-xl text-primary-600">{formatPrice(order.total)}</dd>
                                     </div>
                                 </dl>
                             </div>
 
                             {/* Items */}
-                            <div className="card p-6">
-                                <h3 className="font-bold mb-4">Articles commandés</h3>
+                            <div className="card bg-white p-6">
+                                <h3 className="font-semibold text-neutral-900 mb-4" style={{ fontFamily: 'Poppins, sans-serif', textTransform: 'none' }}>
+                                    Articles commandés
+                                </h3>
                                 <ul className="space-y-3">
                                     {order.items?.map((item: { id: string; product_name: string; quantity: number; unit_price: number }) => (
-                                        <li key={item.id} className="flex justify-between">
-                                            <span className="text-dark-300">
+                                        <li key={item.id} className="flex justify-between py-2 border-b border-neutral-50 last:border-0">
+                                            <span className="text-neutral-600">
                                                 {item.quantity}x {item.product_name}
                                             </span>
-                                            <span className="font-semibold">
+                                            <span className="font-medium text-neutral-900">
                                                 {formatPrice(item.unit_price * item.quantity)}
                                             </span>
                                         </li>
@@ -179,26 +190,26 @@ export default async function ConfirmationPage({
                             </div>
 
                             {/* Pickup Info */}
-                            <div className="card p-6 bg-accent-400/10 border-accent-400/20">
-                                <h3 className="font-bold mb-4 flex items-center gap-2">
-                                    <MapPin className="w-5 h-5 text-accent-400" />
+                            <div className="card bg-accent-50 border-accent-200 p-6">
+                                <h3 className="font-semibold text-neutral-900 mb-4 flex items-center gap-2" style={{ fontFamily: 'Poppins, sans-serif', textTransform: 'none' }}>
+                                    <MapPin className="w-5 h-5 text-accent-600" />
                                     Point de retrait
                                 </h3>
-                                <p className="text-dark-300 mb-2">
+                                <p className="text-neutral-700 mb-2">
                                     <strong>Canadian Burger & Pizza</strong>
                                 </p>
-                                <p className="text-dark-400 text-sm">
+                                <p className="text-neutral-600 text-sm">
                                     Rue de la Station 42<br />
                                     4900 Spa, Belgique
                                 </p>
-                                <div className="flex items-center gap-2 mt-4 text-sm text-dark-400">
-                                    <Clock className="w-4 h-4" />
-                                    Temps de préparation estimé: ~10 minutes
+                                <div className="flex items-center gap-2 mt-4 pt-4 border-t border-accent-200">
+                                    <Clock className="w-4 h-4 text-accent-600" />
+                                    <span className="text-sm text-neutral-600">Temps de préparation estimé: ~10 minutes</span>
                                 </div>
                             </div>
 
                             {/* Actions */}
-                            <div className="flex flex-col sm:flex-row gap-4">
+                            <div className="flex flex-col sm:flex-row gap-3">
                                 <Link href="/menu" className="btn-primary flex-1 justify-center">
                                     Nouvelle commande
                                     <ArrowRight className="w-5 h-5" />
