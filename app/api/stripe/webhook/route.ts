@@ -8,12 +8,8 @@ import Stripe from 'stripe';
 import { stripe } from '@/lib/stripe';
 import { createAdminSupabaseClient } from '@/lib/supabase';
 
-// Disable body parsing for webhook signature verification
-export const config = {
-    api: {
-        bodyParser: false,
-    },
-};
+// App Router automatically handles raw body for webhooks
+// No need for config export
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
