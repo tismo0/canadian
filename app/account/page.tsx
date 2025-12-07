@@ -1,193 +1,271 @@
 /**
- * Account Page
- * User profile and order history
+ * Customer Account Page
+ * Shows loyalty points and personal QR code
  */
 
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { User, Package, Settings, LogOut, Clock, ChevronRight, Loader2 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
+import {
+    Star,
+    Gift,
+    History,
+    User,
+    LogOut,
+    ChevronRight,
+    Sparkles,
+    Crown
+} from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { createBrowserSupabaseClient } from '@/lib/supabase';
 import { formatPrice } from '@/lib/stripe';
-import type { Order } from '@/types/database';
+
+// Points tiers
+const TIERS = [
+    { name: 'Bronze', min: 0, max: 99, color: '#CD7F32', icon: Star },
+    { name: 'Argent', min: 100, max: 299, color: '#C0C0C0', icon: Sparkles },
+    { name: 'Or', min: 300, max: 599, color: '#D4AF37', icon: Crown },
+    { name: 'Platine', min: 600, max: Infinity, color: '#E5E4E2', icon: Crown },
+];
 
 export default function AccountPage() {
-    const { user, profile, signOut, loading: authLoading } = useAuth();
-    const [orders, setOrders] = useState<Order[]>([]);
-    const [loadingOrders, setLoadingOrders] = useState(true);
+    const router = useRouter();
+    const { user, profile, signOut } = useAuth();
+    const [orders, setOrders] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [points, setPoints] = useState(0);
     const supabase = createBrowserSupabaseClient();
 
     useEffect(() => {
-        if (user) {
-            fetchOrders();
+        if (!user) {
+            router.push('/login?redirect=/account');
+            return;
         }
-    }, [user]);
+        fetchData();
+    }, [user, router]);
 
-    const fetchOrders = async () => {
-        const { data, error } = await supabase
-            .from('orders')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(10);
+    const fetchData = async () => {
+        if (!user) return;
 
-        if (!error && data) {
-            setOrders(data);
+        // Fetch orders
+        try {
+            const { data: ordersData } = await (supabase as any)
+                .from('orders')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false })
+                .limit(10);
+
+            if (ordersData) setOrders(ordersData);
+
+            // Calculate points from orders (1€ = 1 point)
+            const totalSpent = (ordersData || [])
+                .filter((o: any) => o.payment_status === 'succeeded')
+                .reduce((sum: number, o: any) => sum + o.total, 0);
+            setPoints(Math.floor(totalSpent));
+        } catch (err) {
+            console.error('Error fetching data:', err);
         }
-        setLoadingOrders(false);
+        setLoading(false);
     };
 
-    // Redirect if not logged in
-    if (!authLoading && !user) {
+    const handleLogout = async () => {
+        await signOut();
+        router.push('/');
+    };
+
+    // Get current tier
+    const currentTier = TIERS.find(t => points >= t.min && points <= t.max) || TIERS[0];
+    const nextTier = TIERS[TIERS.indexOf(currentTier) + 1];
+    const progress = nextTier
+        ? ((points - currentTier.min) / (nextTier.min - currentTier.min)) * 100
+        : 100;
+
+    // Generate unique QR token for this user
+    const loyaltyQRData = user ? JSON.stringify({
+        type: 'loyalty',
+        userId: user.id,
+        email: user.email,
+        timestamp: Date.now()
+    }) : '';
+
+    if (loading) {
         return (
-            <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4">
-                <User className="w-16 h-16 text-dark-600 mb-4" />
-                <h1 className="text-2xl font-bold mb-2">Connectez-vous</h1>
-                <p className="text-dark-400 mb-6">Accédez à votre compte pour voir vos commandes.</p>
-                <Link href="/login" className="btn-primary">Se connecter</Link>
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="w-8 h-8 border-2 border-accent-400 border-t-transparent rounded-full animate-spin" />
             </div>
         );
     }
 
-    if (authLoading) {
-        return (
-            <div className="min-h-[60vh] flex items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-accent-400" />
-            </div>
-        );
-    }
-
-    const statusLabels: Record<string, { label: string; color: string }> = {
-        pending: { label: 'En attente', color: 'status-pending' },
-        paid: { label: 'Payée', color: 'status-paid' },
-        preparing: { label: 'En préparation', color: 'status-preparing' },
-        ready: { label: 'Prête', color: 'status-ready' },
-        completed: { label: 'Récupérée', color: 'status-completed' },
-        cancelled: { label: 'Annulée', color: 'status-cancelled' },
-    };
+    if (!user) return null;
 
     return (
-        <div className="min-h-screen">
-            {/* Header */}
-            <section className="bg-dark-900/50 border-b border-white/5">
-                <div className="container-custom py-8">
-                    <h1 className="text-3xl font-bold">Mon compte</h1>
-                </div>
-            </section>
+        <div className="min-h-screen py-8 px-4">
+            <div className="max-w-2xl mx-auto space-y-6">
+                {/* Header */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-center"
+                >
+                    <h1 className="text-3xl font-bold mb-2">Mon Compte</h1>
+                    <p className="text-dark-400">{user.email}</p>
+                </motion.div>
 
-            <section className="section">
-                <div className="container-custom">
-                    <div className="grid lg:grid-cols-3 gap-8">
-                        {/* Sidebar */}
-                        <div className="lg:col-span-1">
-                            <div className="card p-6">
-                                {/* User Info */}
-                                <div className="flex items-center gap-4 mb-6 pb-6 border-b border-white/10">
-                                    <div className="w-16 h-16 bg-primary-600/20 rounded-full flex items-center justify-center">
-                                        <User className="w-8 h-8 text-primary-400" />
-                                    </div>
-                                    <div>
-                                        <h2 className="font-semibold">{profile?.full_name || 'Utilisateur'}</h2>
-                                        <p className="text-sm text-dark-400">{user?.email}</p>
-                                    </div>
-                                </div>
-
-                                {/* Navigation */}
-                                <nav className="space-y-1">
-                                    <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-primary-600/20 text-primary-400">
-                                        <Package className="w-5 h-5" />
-                                        Mes commandes
-                                    </button>
-                                    <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-dark-300 hover:bg-dark-800 transition-colors">
-                                        <Settings className="w-5 h-5" />
-                                        Paramètres
-                                    </button>
-                                    <button
-                                        onClick={() => signOut()}
-                                        className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-dark-400 hover:bg-dark-800 hover:text-primary-400 transition-colors"
-                                    >
-                                        <LogOut className="w-5 h-5" />
-                                        Déconnexion
-                                    </button>
-                                </nav>
-                            </div>
+                {/* Points Card */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="points-card"
+                >
+                    <div className="flex items-start justify-between mb-4">
+                        <div>
+                            <p className="text-dark-900/60 text-sm font-medium uppercase tracking-wider">
+                                Mes Points Fidélité
+                            </p>
+                            <p className="points-value">{points}</p>
                         </div>
-
-                        {/* Orders */}
-                        <div className="lg:col-span-2">
-                            <div className="card">
-                                <div className="p-6 border-b border-white/10">
-                                    <h2 className="font-bold text-xl">Mes commandes</h2>
-                                </div>
-
-                                {loadingOrders ? (
-                                    <div className="p-12 text-center">
-                                        <Loader2 className="w-8 h-8 animate-spin text-accent-400 mx-auto" />
-                                    </div>
-                                ) : orders.length === 0 ? (
-                                    <div className="p-12 text-center">
-                                        <Package className="w-12 h-12 text-dark-600 mx-auto mb-4" />
-                                        <h3 className="font-semibold mb-2">Aucune commande</h3>
-                                        <p className="text-dark-400 mb-6">Vous n'avez pas encore passé de commande.</p>
-                                        <Link href="/menu" className="btn-primary">Commander maintenant</Link>
-                                    </div>
-                                ) : (
-                                    <ul className="divide-y divide-white/5">
-                                        {orders.map((order) => {
-                                            const status = statusLabels[order.status] || statusLabels.pending;
-                                            return (
-                                                <motion.li
-                                                    key={order.id}
-                                                    initial={{ opacity: 0 }}
-                                                    animate={{ opacity: 1 }}
-                                                >
-                                                    <Link
-                                                        href={`/confirmation/${order.id}`}
-                                                        className="flex items-center justify-between p-4 hover:bg-dark-800/50 transition-colors"
-                                                    >
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="w-10 h-10 bg-dark-800 rounded-lg flex items-center justify-center">
-                                                                <Package className="w-5 h-5 text-dark-400" />
-                                                            </div>
-                                                            <div>
-                                                                <p className="font-semibold">
-                                                                    Commande #{order.order_number?.toString().padStart(4, '0')}
-                                                                </p>
-                                                                <div className="flex items-center gap-2 text-sm text-dark-400">
-                                                                    <Clock className="w-3 h-3" />
-                                                                    {new Date(order.created_at).toLocaleDateString('fr-BE', {
-                                                                        day: 'numeric',
-                                                                        month: 'short',
-                                                                        year: 'numeric',
-                                                                    })}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="text-right">
-                                                                <p className="font-bold text-accent-400">
-                                                                    {formatPrice(order.total)}
-                                                                </p>
-                                                                <span className={`badge ${status.color}`}>
-                                                                    {status.label}
-                                                                </span>
-                                                            </div>
-                                                            <ChevronRight className="w-5 h-5 text-dark-500" />
-                                                        </div>
-                                                    </Link>
-                                                </motion.li>
-                                            );
-                                        })}
-                                    </ul>
-                                )}
-                            </div>
+                        <div
+                            className="flex items-center gap-2 px-3 py-1 rounded-full"
+                            style={{ backgroundColor: `${currentTier.color}30` }}
+                        >
+                            <currentTier.icon className="w-4 h-4" style={{ color: currentTier.color }} />
+                            <span className="font-bold text-sm" style={{ color: currentTier.color }}>
+                                {currentTier.name}
+                            </span>
                         </div>
                     </div>
-                </div>
-            </section>
+
+                    {/* Progress to next tier */}
+                    {nextTier && (
+                        <div className="mt-6">
+                            <div className="flex justify-between text-sm mb-2">
+                                <span className="text-dark-900/60">Prochain niveau: {nextTier.name}</span>
+                                <span className="font-bold">{nextTier.min - points} pts restants</span>
+                            </div>
+                            <div className="h-2 bg-dark-900/20 rounded-full overflow-hidden">
+                                <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${progress}%` }}
+                                    transition={{ duration: 1, ease: 'easeOut' }}
+                                    className="h-full bg-dark-900/40 rounded-full"
+                                />
+                            </div>
+                        </div>
+                    )}
+                </motion.div>
+
+                {/* QR Code */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="card p-6"
+                >
+                    <h3 className="text-lg font-bold mb-4 text-center">Ma Carte Fidélité</h3>
+                    <div className="flex justify-center">
+                        <div className="qr-container">
+                            <QRCodeSVG
+                                value={loyaltyQRData}
+                                size={180}
+                                level="H"
+                                includeMargin={false}
+                                className="qr-code"
+                                bgColor="#FFFFFF"
+                                fgColor="#1a1614"
+                            />
+                        </div>
+                    </div>
+                    <p className="text-center text-dark-400 text-sm mt-4">
+                        Présentez ce QR code pour collecter vos points
+                    </p>
+                </motion.div>
+
+                {/* Quick Actions */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="grid grid-cols-2 gap-4"
+                >
+                    <Link href="/menu" className="card p-4 card-hover flex flex-col items-center gap-2">
+                        <Gift className="w-8 h-8 text-accent-400" />
+                        <span className="font-medium">Commander</span>
+                    </Link>
+                    <button className="card p-4 card-hover flex flex-col items-center gap-2" disabled>
+                        <Star className="w-8 h-8 text-accent-400" />
+                        <span className="font-medium">Récompenses</span>
+                        <span className="text-xs text-dark-400">Bientôt</span>
+                    </button>
+                </motion.div>
+
+                {/* Order History */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="card overflow-hidden"
+                >
+                    <div className="p-4 border-b border-accent-400/10 flex items-center justify-between">
+                        <h3 className="font-bold flex items-center gap-2">
+                            <History className="w-5 h-5 text-accent-400" />
+                            Historique
+                        </h3>
+                    </div>
+                    <div className="divide-y divide-accent-400/5">
+                        {orders.length === 0 ? (
+                            <div className="p-8 text-center text-dark-400">
+                                Aucune commande
+                            </div>
+                        ) : (
+                            orders.slice(0, 5).map((order: any) => (
+                                <Link
+                                    key={order.id}
+                                    href={`/confirmation/${order.id}`}
+                                    className="flex items-center justify-between p-4 hover:bg-white/5 transition-colors"
+                                >
+                                    <div>
+                                        <p className="font-medium">Commande #{order.order_number}</p>
+                                        <p className="text-sm text-dark-400">
+                                            {new Date(order.created_at).toLocaleDateString('fr-FR')}
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-bold text-accent-400">{formatPrice(order.total)}</span>
+                                        <ChevronRight className="w-4 h-4 text-dark-400" />
+                                    </div>
+                                </Link>
+                            ))
+                        )}
+                    </div>
+                </motion.div>
+
+                {/* Account Actions */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="card overflow-hidden"
+                >
+                    <button className="w-full p-4 flex items-center gap-3 hover:bg-white/5 transition-colors border-b border-accent-400/5">
+                        <User className="w-5 h-5 text-accent-400" />
+                        <span>Modifier mon profil</span>
+                        <ChevronRight className="w-4 h-4 text-dark-400 ml-auto" />
+                    </button>
+                    <button
+                        onClick={handleLogout}
+                        className="w-full p-4 flex items-center gap-3 hover:bg-error-500/10 transition-colors text-error-500"
+                    >
+                        <LogOut className="w-5 h-5" />
+                        <span>Déconnexion</span>
+                    </button>
+                </motion.div>
+            </div>
         </div>
     );
 }

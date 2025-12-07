@@ -4,24 +4,26 @@
  */
 
 import type { Metadata } from 'next';
-import { Inter, Outfit } from 'next/font/google';
+import { Playfair_Display, Lato } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/contexts/auth-context';
 import { CartProvider } from '@/contexts/cart-context';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import Cart from '@/components/Cart';
+import AnnouncementBanner from '@/components/AnnouncementBanner';
 
-// Fonts
-const inter = Inter({
+// Fonts - Restaurant Theme
+const playfair = Playfair_Display({
   subsets: ['latin'],
-  variable: '--font-inter',
+  variable: '--font-playfair',
   display: 'swap',
 });
 
-const outfit = Outfit({
+const lato = Lato({
   subsets: ['latin'],
-  variable: '--font-outfit',
+  weight: ['300', '400', '700'],
+  variable: '--font-lato',
   display: 'swap',
 });
 
@@ -60,7 +62,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr" className={`${inter.variable} ${outfit.variable}`}>
+    <html lang="fr" className={`${playfair.variable} ${lato.variable}`}>
       <body className="font-sans antialiased">
         <AuthProvider>
           <CartProvider>
@@ -71,6 +73,9 @@ export default function RootLayout({
             >
               Aller au contenu principal
             </a>
+
+            {/* Announcement Banner */}
+            <AnnouncementBanner />
 
             {/* Navigation */}
             <Navbar />
@@ -91,3 +96,4 @@ export default function RootLayout({
     </html>
   );
 }
+
